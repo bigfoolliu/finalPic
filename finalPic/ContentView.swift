@@ -39,7 +39,7 @@ struct ContentView: View {
                         .fontWeight(.bold)
                     
                     Spacer()
-                    
+                    // 如果选择了图片
                     if selectedImage != nil {
                         Button(action: { showingImageInfo.toggle() }) {
                             Image(systemName: "info.circle")
@@ -206,6 +206,7 @@ struct ContentView: View {
         }
     }
     
+    // 重置图片
     private func resetImage() {
         selectedImage = nil
         selectedItem = nil
@@ -214,25 +215,62 @@ struct ContentView: View {
         filterIntensity = 0.5
     }
     
+    // 重置图片透明度
     private func resetImageTransform() {
         imageScale = 1.0
         imageOffset = .zero
         lastImageOffset = .zero
     }
     
+    // 保存图片
     private func saveImage() {
         guard let image = selectedImage else { return }
         
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.png, .jpeg]
         savePanel.nameFieldStringValue = "edited_image.png"
+        savePanel.title = "保存图片"
+        savePanel.message = "选择保存位置和文件名"
         
         savePanel.begin { response in
             if response == .OK, let url = savePanel.url {
-                if let tiffData = image.tiffRepresentation,
-                   let bitmapImage = NSBitmapImageRep(data: tiffData),
-                   let pngData = bitmapImage.representation(using: .png, properties: [:]) {
-                    try? pngData.write(to: url)
+                do {
+                    if let tiffData = image.tiffRepresentation,
+                       let bitmapImage = NSBitmapImageRep(data: tiffData) {
+                        
+                        let fileExtension = url.pathExtension.lowercased()
+                        let imageData: Data?
+                        
+                        if fileExtension == "jpg" || fileExtension == "jpeg" {
+                            imageData = bitmapImage.representation(using: .jpeg, properties: [.compressionFactor: 0.8])
+                        } else {
+                            imageData = bitmapImage.representation(using: .png, properties: [:])
+                        }
+                        
+                        if let data = imageData {
+                            try data.write(to: url)
+                            
+                            // 显示成功消息
+                            DispatchQueue.main.async {
+                                let alert = NSAlert()
+                                alert.messageText = "保存成功"
+                                alert.informativeText = "图片已保存到: \(url.lastPathComponent)"
+                                alert.alertStyle = .informational
+                                alert.addButton(withTitle: "确定")
+                                alert.runModal()
+                            }
+                        }
+                    }
+                } catch {
+                    // 显示错误消息
+                    DispatchQueue.main.async {
+                        let alert = NSAlert()
+                        alert.messageText = "保存失败"
+                        alert.informativeText = "无法保存图片: \(error.localizedDescription)"
+                        alert.alertStyle = .critical
+                        alert.addButton(withTitle: "确定")
+                        alert.runModal()
+                    }
                 }
             }
         }
