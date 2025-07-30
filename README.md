@@ -1,4 +1,4 @@
-# FinalPic - macOS 图片选择器
+# FinalPic - 简单macOS 图片查看编辑器
 
 一个功能丰富的macOS图片选择器和编辑器，使用SwiftUI开发。
 
