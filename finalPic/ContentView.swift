@@ -5,10 +5,10 @@
 //  Created by 刘瑞 on 2025/7/25.
 //
 
-import SwiftUI
-import PhotosUI
 import CoreImage
 import CoreImage.CIFilterBuiltins
+import PhotosUI
+import SwiftUI
 
 struct ContentView: View {
     @State private var selectedImage: NSImage?
@@ -20,7 +20,7 @@ struct ContentView: View {
     @State private var selectedFilter: ImageFilter = .none
     @State private var filterIntensity: Double = 0.5
     @State private var showingImageInfo = false
-    
+
     enum ImageFilter: String, CaseIterable {
         case none = "无滤镜"
         case sepia = "复古"
@@ -28,7 +28,7 @@ struct ContentView: View {
         case vibrant = "鲜艳"
         case blur = "模糊"
     }
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
@@ -37,7 +37,7 @@ struct ContentView: View {
                     Text("图片选择器")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                    
+
                     Spacer()
                     // 如果选择了图片
                     if selectedImage != nil {
@@ -52,13 +52,13 @@ struct ContentView: View {
                     }
                 }
                 .padding(.top)
-                
+
                 // 图片显示区域
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.gray.opacity(0.1))
                         .frame(height: 400)
-                    
+
                     if let selectedImage = selectedImage {
                         Image(nsImage: selectedImage)
                             .resizable()
@@ -95,7 +95,7 @@ struct ContentView: View {
                     }
                 }
                 .padding()
-                
+
                 // 控制按钮
                 HStack(spacing: 20) {
                     // 选择图片按钮
@@ -107,7 +107,7 @@ struct ContentView: View {
                             .foregroundColor(.white)
                             .cornerRadius(10)
                     }
-                    
+
                     // 重置按钮
                     Button(action: resetImage) {
                         Label("重置", systemImage: "arrow.clockwise")
@@ -118,7 +118,7 @@ struct ContentView: View {
                             .cornerRadius(10)
                     }
                     .disabled(selectedImage == nil)
-                    
+
                     // 保存按钮
                     Button(action: saveImage) {
                         Label("保存", systemImage: "square.and.arrow.down")
@@ -130,25 +130,25 @@ struct ContentView: View {
                     }
                     .disabled(selectedImage == nil)
                 }
-                
+
                 // 滤镜控制
                 if selectedImage != nil {
                     VStack(spacing: 15) {
                         Text("滤镜效果")
                             .font(.headline)
-                        
+
                         Picker("滤镜", selection: $selectedFilter) {
                             ForEach(ImageFilter.allCases, id: \.self) { filter in
                                 Text(filter.rawValue).tag(filter)
                             }
                         }
                         .pickerStyle(SegmentedPickerStyle())
-                        
+
                         if selectedFilter != .none {
                             VStack {
                                 Text("强度: \(Int(filterIntensity * 100))%")
                                     .font(.caption)
-                                Slider(value: $filterIntensity, in: 0...1)
+                                Slider(value: $filterIntensity, in: 0 ... 1)
                             }
                         }
                     }
@@ -156,13 +156,13 @@ struct ContentView: View {
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(12)
                 }
-                
+
                 // 缩放控制
                 if selectedImage != nil {
                     VStack(spacing: 10) {
                         Text("缩放控制")
                             .font(.headline)
-                        
+
                         HStack {
                             Button(action: { imageScale = max(0.1, imageScale - 0.1) }) {
                                 Image(systemName: "minus.magnifyingglass")
@@ -171,11 +171,11 @@ struct ContentView: View {
                                     .background(Color.gray.opacity(0.2))
                                     .cornerRadius(8)
                             }
-                            
+
                             Text("\(Int(imageScale * 100))%")
                                 .font(.headline)
                                 .frame(minWidth: 60)
-                            
+
                             Button(action: { imageScale = min(5.0, imageScale + 0.1) }) {
                                 Image(systemName: "plus.magnifyingglass")
                                     .font(.title2)
@@ -189,7 +189,7 @@ struct ContentView: View {
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(12)
                 }
-                
+
                 Spacer()
             }
             .padding()
@@ -198,14 +198,15 @@ struct ContentView: View {
         .onChange(of: selectedItem) { _, newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self),
-                   let image = NSImage(data: data) {
+                   let image = NSImage(data: data)
+                {
                     selectedImage = image
                     resetImageTransform()
                 }
             }
         }
     }
-    
+
     // 重置图片
     private func resetImage() {
         selectedImage = nil
@@ -214,42 +215,42 @@ struct ContentView: View {
         selectedFilter = .none
         filterIntensity = 0.5
     }
-    
+
     // 重置图片透明度
     private func resetImageTransform() {
         imageScale = 1.0
         imageOffset = .zero
         lastImageOffset = .zero
     }
-    
+
     // 保存图片
     private func saveImage() {
         guard let image = selectedImage else { return }
-        
+
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.png, .jpeg]
         savePanel.nameFieldStringValue = "edited_image.png"
         savePanel.title = "保存图片"
         savePanel.message = "选择保存位置和文件名"
-        
+
         savePanel.begin { response in
             if response == .OK, let url = savePanel.url {
                 do {
                     if let tiffData = image.tiffRepresentation,
-                       let bitmapImage = NSBitmapImageRep(data: tiffData) {
-                        
+                       let bitmapImage = NSBitmapImageRep(data: tiffData)
+                    {
                         let fileExtension = url.pathExtension.lowercased()
                         let imageData: Data?
-                        
+
                         if fileExtension == "jpg" || fileExtension == "jpeg" {
                             imageData = bitmapImage.representation(using: .jpeg, properties: [.compressionFactor: 0.8])
                         } else {
                             imageData = bitmapImage.representation(using: .png, properties: [:])
                         }
-                        
+
                         if let data = imageData {
                             try data.write(to: url)
-                            
+
                             // 显示成功消息
                             DispatchQueue.main.async {
                                 let alert = NSAlert()
@@ -281,7 +282,7 @@ struct ContentView: View {
 struct ImageFilterModifier: ViewModifier {
     let filter: ContentView.ImageFilter
     let intensity: Double
-    
+
     func body(content: Content) -> some View {
         switch filter {
         case .none:
@@ -307,22 +308,22 @@ struct ImageFilterModifier: ViewModifier {
 // 图片信息视图
 struct ImageInfoView: View {
     let image: NSImage
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("图片信息")
                 .font(.headline)
                 .padding(.bottom, 5)
-            
+
             Text("尺寸: \(Int(image.size.width)) × \(Int(image.size.height))")
             Text("文件大小: \(imageFileSize)")
-            
+
             Spacer()
         }
         .padding()
         .frame(width: 200, height: 100)
     }
-    
+
     private var imageFileSize: String {
         if let tiffData = image.tiffRepresentation {
             let sizeInBytes = tiffData.count
